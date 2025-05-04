@@ -98,6 +98,7 @@ app.get('/callback', function(req, res)
             if (!error && response.statusCode === 200) 
             {
                 var access_token = body.access_token;
+                console.log('Using access token:', access_token);
 
                 get_all_followed(access_token)
                 .then(artist_info => 
@@ -121,32 +122,41 @@ app.get('/callback', function(req, res)
 async function get_all_followed(access_token) 
 {
     const limit = 50;
-    let offset = 0;
-    let total = 1;
     let artists = [];
-
-    const get_artists = async () => 
-    {
-        while (artists.length < total) 
-        {
-            const response = await fetch(`https://api.spotify.com/v1/me/following?type=artist&limit=${limit}&offset=${offset}`, 
-            {
-                headers: 
-                {
-                    'Authorization': 'Bearer ' + access_token
-                }
-            });
-
-            const data = await response.json();
-            total = data.artists.total;
-            offset += limit;
-            artists.push(...data.artists.items);
+    let after = null;
+    
+    do {
+        const url = new URL('https://api.spotify.com/v1/me/following');
+        url.searchParams.set('type', 'artist');
+        url.searchParams.set('limit', limit);
+        if (after) {
+            url.searchParams.set('after', after);
         }
-        return artists;
-    };
+    
+        const response = await fetch(url.toString(), {
+            headers: {
+                'Authorization': 'Bearer ' + access_token
+            }
+        });
 
-    const artist_data = await get_artists();
-    const artist_info = artist_data.map(artist => ({ name: artist.name, popularity: artist.popularity }));
+    
+        const data = await response.json();
+    
+        if (!data.artists || !data.artists.items) {
+            console.error('Unexpected response format:', data);
+            return [];
+        }
+    
+        artists.push(...data.artists.items);
+        after = data.artists.cursors?.after;
+    
+    } while (after);
+    
+    const artist_info = artists.map(artist => ({
+        name: artist.name,
+        popularity: artist.popularity
+    }));
+    console.log(artist_info);
     return artist_info;
 }
 
