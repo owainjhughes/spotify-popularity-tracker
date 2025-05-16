@@ -1,15 +1,20 @@
 {
-    "version": 2,
-    "builds": [
-    { "src": "app.js", "use": "@vercel/node" },
-    { "src": "templates/**", "use": "@vercel/static" }
-    ],
-    "routes": [
-    { "src": "/static/(.*)", "dest": "/templates/static/$1" },
-    { "src": "/login", "dest": "/app.js" },
-    { "src": "/callback", "dest": "/app.js" },
-    { "src": "/", "dest": "/templates/index.html" },
-    { "src": "/artists", "dest": "/templates/artists.html" },
-    { "src": "/(.*)", "dest": "/app.js" }
-    ]
+  "version": 2,
+  "builds": [
+    {
+      "src": "dist/app.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "dist/app.js"
+    }
+  ],
+  "build": {
+    "env": {
+      "NODE_ENV": "production"
+    }
+  }
 }
